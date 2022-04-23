@@ -11,8 +11,8 @@ const BlurryBackgroundImage = styled.img`
   ${p}
   position: absolute;
   object-fit: cover;
+  filter: blur(0.3rem);
 `;
-
 const BackgroundImage = styled.img`
   ${p}
   position: absolute;

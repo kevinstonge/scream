@@ -8,48 +8,54 @@ import {
 } from './components/styledComponents';
 import { useEffect, useState } from 'react';
 type face = {
+  xFunc: Function;
+  yFunc: Function;
   x: number;
 };
-const perlin = require('perlin-noise');
-const perlinX = perlin.generatePerlinNoise(100, 100);
-//approach:
-//use perlin noise to add values to x,y,z positions
-//also use some function to add additional amounts to x,y,z positions depending on proximity to the center.
-//the perlin noise values can be positive or negative, so that faces should change direction randomly (but smoothly)
-//the additional amounts added are always positive (relative to the "origin"), so will prevent faces from swinging back across the center.
-
-//more details on the math:
-//perlin value + central value = current speed in one dimension
-//perlin value updated every 1s (maybe?), central value depends on location (probably simple formula to calculate it)
-//
 
 function Scream() {
-  const [faces, setFaces]: [any, any] = useState([{ x: 0, vx: 1 }, { x: 0, vx: 1 }]);
-  const animate = () => {
-    let previous = 0;
+  const fA = (time: number, mag: number, offset: number, freq: number) => {
+    return mag * Math.sin((freq * time) / 1000) + offset;
+  };
+  const numberOfFaces = 7;
+  const initialFaces = new Array(numberOfFaces).fill({}).map((f) => {
+    const xMag: number = Math.random() * 50;
+    const xOffset: number = Math.random() * 0;
+    const xFreq: number = Math.random();
+    const yMag: number = Math.random() * 50;
+    const yOffset: number = Math.random() * 0;
+    const yFreq: number = Math.random();
+    return {
+      xFunc: (time: number) => {
+        return fA(time, xMag, xOffset, xFreq);
+      },
+      yFunc: (time: number) => {
+        return fA(time, yMag, yOffset, yFreq);
+      },
+    };
+  });
+  const [faces, setFaces]: [any, any] = useState(initialFaces);
+  useEffect(() => {
     requestAnimationFrame(function cb(time: any) {
-      const elapsed = time - previous
       const newFaces = faces.map((face: face) => {
-        const newFace = { 
-          x: face.x + (elapsed/1000),
-          vx: perlinX[1]
+        const newFace = {
+          x: face.xFunc(time),
+          y: -face.yFunc(time),
         };
         return newFace;
       });
       setFaces(newFaces);
-      if (time) requestAnimationFrame(cb); // queue request for next frame
+      if (time) requestAnimationFrame(cb);
     });
-  };
-  useEffect(() => {
-    animate();
   }, []);
   return (
     <Container>
       <BlurryBackgroundImage src={bg} />
       <BackgroundImage src={bg} />
-      {/* <ForegroundImage src={fg} style={{ border: 'none' }} /> */}
       {faces.map((f: any, i: number) => {
-        return <ForegroundImage src={fg} style={{ left: `${f.x}%` }} key={`face${i}`} />;
+        return (
+          <ForegroundImage src={fg} style={{ left: `${f.x}%`, top: `${f.y}%` }} key={`face${i}`} />
+        );
       })}
     </Container>
   );

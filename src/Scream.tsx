@@ -6,45 +6,54 @@ import {
   BackgroundImage,
   ForegroundImage,
 } from './components/styledComponents';
-import { useEffect, useState } from 'react';
-type face = {
-  xFunc: Function;
-  yFunc: Function;
-  x: number;
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { CSSProperties } from 'styled-components';
+type FParams = {
+  mag: number;
+  offset: number;
+  freq: number;
+  shift: number;
 };
-
+const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
+const numberOfFaces = 20;
+const initialFaces = new Array(numberOfFaces).fill({});
 function Scream() {
-  const fA = (time: number, mag: number, offset: number, freq: number) => {
-    return mag * Math.sin((freq * time) / 1000) + offset;
-  };
-  const numberOfFaces = 7;
-  const initialFaces = new Array(numberOfFaces).fill({}).map((f) => {
-    const xMag: number = Math.random() * 50;
-    const xOffset: number = Math.random() * 0;
-    const xFreq: number = Math.random();
-    const yMag: number = Math.random() * 50;
-    const yOffset: number = Math.random() * 0;
-    const yFreq: number = Math.random();
-    return {
-      xFunc: (time: number) => {
-        return fA(time, xMag, xOffset, xFreq);
-      },
-      yFunc: (time: number) => {
-        return fA(time, yMag, yOffset, yFreq);
-      },
-    };
-  });
-  const [faces, setFaces]: [any, any] = useState(initialFaces);
+  const [faces, setFaces]: [CSSProperties[], Dispatch<SetStateAction<any[]>>] =
+    useState(initialFaces);
   useEffect(() => {
+    const fA = (time: number, params: FParams): number => {
+      return params.mag * Math.sin((params.freq * time) / 1000 - params.shift) + params.offset;
+    };
+    const universalParams = initialFaces.map(() => {
+      const universalParamValues = {
+        mag: rand(0, 50),
+        offset: rand(0, 180),
+        freq: rand(0.3, 1),
+        shift: rand(0, 180),
+      };
+      return {
+        top: {
+          ...universalParamValues,
+          mag: -rand(0, 50),
+        },
+        left: {
+          ...universalParamValues,
+        },
+      };
+    });
+    const properties = (time: number, i: number): CSSProperties => {
+      return {
+        top: `${fA(time, universalParams[i]['top'])}%`,
+        left: `${fA(time, universalParams[i]['left'])}%`,
+      };
+    };
+
     requestAnimationFrame(function cb(time: any) {
-      const newFaces = faces.map((face: face) => {
-        const newFace = {
-          x: face.xFunc(time),
-          y: -face.yFunc(time),
-        };
-        return newFace;
-      });
-      setFaces(newFaces);
+      setFaces(
+        faces.map((e, i) => {
+          return properties(time, i);
+        })
+      );
       if (time) requestAnimationFrame(cb);
     });
   }, []);
@@ -52,10 +61,8 @@ function Scream() {
     <Container>
       <BlurryBackgroundImage src={bg} />
       <BackgroundImage src={bg} />
-      {faces.map((f: any, i: number) => {
-        return (
-          <ForegroundImage src={fg} style={{ left: `${f.x}%`, top: `${f.y}%` }} key={`face${i}`} />
-        );
+      {faces.map((f: CSSProperties, i: number) => {
+        return <ForegroundImage src={fg} style={f} key={`face${i}`} />;
       })}
     </Container>
   );

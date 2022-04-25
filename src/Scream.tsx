@@ -6,9 +6,11 @@ import {
   BackgroundImage,
   ForegroundImage,
 } from './components/styledComponents';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, Key, SetStateAction, useEffect, useState } from 'react';
 import { CSSProperties } from 'styled-components';
+import { ObjectType } from 'typescript';
 type FParams = {
+  flip: number;
   mag: number;
   offset: number;
   freq: number;
@@ -22,36 +24,41 @@ function Scream() {
     useState(initialFaces);
   useEffect(() => {
     const fA = (time: number, params: FParams): number => {
-      return params.mag * Math.sin((params.freq * time) / 1000 - params.shift) + params.offset;
+      return (
+        params.mag * Math.sin((params.flip * params.freq * time) / 1000 + params.shift) +
+        params.offset
+      );
     };
-    const universalParams = initialFaces.map(() => {
-      const universalParamValues = {
+    const properties = initialFaces.map(() => {
+      const defaultParams = (overrides?: Partial<FParams>) => ({
+        flip: [1, -1][Math.floor(rand(0, 2))],
         mag: rand(0, 50),
-        offset: rand(0, 180),
+        offset: rand(0, 0),
         freq: rand(0.3, 1),
-        shift: rand(0, 180),
-      };
+        shift: [0, 3.14][Math.floor(rand(0, 2))],
+        ...overrides,
+      });
       return {
-        top: {
-          ...universalParamValues,
-          mag: -rand(0, 50),
-        },
-        left: {
-          ...universalParamValues,
+        top: { params: defaultParams(), format: (v: number) => `${v}%` },
+        left: { params: defaultParams(), format: (v: number) => `${v}%` },
+        transform: {
+          params: defaultParams({ mag: rand(0, 100), offset: 100 }),
+          format: (v: number) => `scale(${v}%)`,
         },
       };
     });
-    const properties = (time: number, i: number): CSSProperties => {
-      return {
-        top: `${fA(time, universalParams[i]['top'])}%`,
-        left: `${fA(time, universalParams[i]['left'])}%`,
-      };
+    const cssProperties = (time: number, i: number): CSSProperties => {
+      const css: CSSProperties = {};
+      Object.keys(properties[0]).forEach((k) => {
+        const { params, format } = properties[i][k as keyof typeof properties[0]];
+        css[k as keyof typeof properties[0]] = format(fA(time, params));
+      });
+      return css;
     };
-
     requestAnimationFrame(function cb(time: any) {
       setFaces(
         faces.map((e, i) => {
-          return properties(time, i);
+          return cssProperties(time, i);
         })
       );
       if (time) requestAnimationFrame(cb);

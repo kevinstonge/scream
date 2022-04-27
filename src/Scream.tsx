@@ -6,18 +6,18 @@ import {
   BackgroundImage,
   ForegroundImage,
 } from './components/styledComponents';
-import { Dispatch, Key, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { CSSProperties } from 'styled-components';
-import { ObjectType } from 'typescript';
 type FParams = {
   flip: number;
   mag: number;
   offset: number;
   freq: number;
   shift: number;
+  format: Function;
 };
 const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
-const numberOfFaces = 20;
+const numberOfFaces = 30;
 const initialFaces = new Array(numberOfFaces).fill({});
 function Scream() {
   const [faces, setFaces]: [CSSProperties[], Dispatch<SetStateAction<any[]>>] =
@@ -30,37 +30,47 @@ function Scream() {
       );
     };
     const properties = initialFaces.map(() => {
-      const defaultParams = (overrides?: Partial<FParams>) => ({
+      const generateRandomizedParams = (overrides?: Partial<FParams>) => ({
         flip: [1, -1][Math.floor(rand(0, 2))],
         mag: rand(0, 50),
         offset: rand(0, 0),
         freq: rand(0.3, 1),
         shift: [0, 3.14][Math.floor(rand(0, 2))],
+        format: (v: number) => `${v}%`,
         ...overrides,
       });
+      const zParams = {
+        mag: 0.5,
+        offset: 1.5,
+        flip: 1,
+        freq: rand(0.3, 1),
+      };
       return {
-        top: { params: defaultParams(), format: (v: number) => `${v}%` },
-        left: { params: defaultParams(), format: (v: number) => `${v}%` },
-        transform: {
-          params: defaultParams({ mag: rand(0, 100), offset: 100 }),
-          format: (v: number) => `scale(${v}%)`,
-        },
+        top: generateRandomizedParams(),
+        left: generateRandomizedParams(),
+        transform: generateRandomizedParams({
+          ...zParams,
+          format: (v: number) => `scale(${v}) rotate(${v * 360}deg)`,
+        }),
+        filter: generateRandomizedParams({
+          ...zParams,
+          format: (v: number) => `blur(${v * 1.2}px) hue-rotate(${v * 360}deg)`,
+        }),
+        opacity: generateRandomizedParams({
+          format: (v: number) => `${v * 5}%`,
+        }),
       };
     });
     const cssProperties = (time: number, i: number): CSSProperties => {
       const css: CSSProperties = {};
       Object.keys(properties[0]).forEach((k) => {
-        const { params, format } = properties[i][k as keyof typeof properties[0]];
-        css[k as keyof typeof properties[0]] = format(fA(time, params));
+        const params = properties[i][k as keyof typeof properties[0]];
+        css[k as keyof typeof properties[0]] = params.format(fA(time, params));
       });
       return css;
     };
     requestAnimationFrame(function cb(time: any) {
-      setFaces(
-        faces.map((e, i) => {
-          return cssProperties(time, i);
-        })
-      );
+      setFaces(initialFaces.map((e, i) => cssProperties(time, i)));
       if (time) requestAnimationFrame(cb);
     });
   }, []);

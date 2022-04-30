@@ -9,11 +9,14 @@ import {
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { CSSProperties } from 'react';
 import type { Params, Props, Subprops } from './types';
-const numberOfFaces: number = 10;
+const numberOfFaces: number = 32;
 const rand: Function = (min: number, max: number): number => Math.random() * (max - min) + min;
 const fA: Function = (time: number, params: Params): number => {
   return (
-    params.mag * Math.sin((params.flip * params.freq * time) / 1000 + params.shift) + params.offset
+    params.mag * Math.sin((params.flip * params.freq * time) / 1000 + params.shift) +
+    params.offset +
+    params.mag * Math.sin((params.flip * params.freq * time) / 10000) +
+    params.shift
   );
 };
 class Parameters {
@@ -48,9 +51,13 @@ class Properties implements Props {
     this.properties = {
       top: new Parameters().params,
       left: new Parameters().params,
-      transform: new Parameters({ format: (v: number): string => `scale(${v}%)` }).params,
-      filter: new Parameters({ format: (v: number): string => `blur(${v}px)` }).params,
-      opacity: new Parameters().params,
+      transform: new Parameters({
+        format: (v: number): string => `scale(${Math.abs(v * 0.05 + 1)}) rotate(${v}deg)`,
+      }).params,
+      filter: new Parameters({
+        format: (v: number): string => `blur(${v / 20}px) hue-rotate(${v * 20}deg)`,
+      }).params,
+      opacity: new Parameters({ format: (v: number): string => `${v * 20}%` }).params,
       ...overrides,
     };
   }

@@ -8,11 +8,17 @@ export type Params = {
   shift: number;
   format: Function;
 };
-export type Face = {
+
+export type Subprops = {
   top: Params;
   left: Params;
   transform: Params;
   filter: Params;
   opacity: Params;
-  css: CSSProperties;
 };
+
+export interface Props {
+  properties: Subprops;
+  styleSheet: CSSProperties;
+  generateStyleSheet(time: number): CSSProperties;
+}

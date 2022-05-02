@@ -8,70 +8,87 @@ import {
 } from './components/styledComponents';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { CSSProperties } from 'react';
-import type { Params, Props, Subprops } from './types';
+import type { ParametersT, PropertiesI, PropertiesT, ParametersI } from './types';
 const numberOfFaces: number = 32;
 const rand: Function = (min: number, max: number): number => Math.random() * (max - min) + min;
-const fA: Function = (time: number, params: Params): number => {
-  return (
-    params.mag * Math.sin((params.flip * params.freq * time) / 1000 + params.shift) +
-    params.offset +
-    params.mag * Math.sin((params.flip * params.freq * time) / 10000) +
-    params.shift
-  );
+const sinusoidal: Function = (time: number, params: ParametersT): number => {
+  const fA = () =>
+    params.mag * Math.sin(params.flip * params.freq * time * 0.001 + params.shift) + params.offset;
+  const fB = () =>
+    1.5 * params.mag * Math.sin(params.flip * params.freq * time * 0.0015 + params.shift * 2) +
+    params.offset;
+  return fA() + fB();
 };
-class Parameters {
-  params: Params;
-  constructor(overrides?: Partial<Params>) {
-    this.params = {
-      flip: [1, -1][Math.floor(rand(0, 2))],
-      mag: rand(0, 50),
-      offset: rand(0, 0),
-      freq: rand(0.3, 1),
-      shift: [0, 3.14][Math.floor(rand(0, 2))],
-      format: (v: number) => {
-        return `${v}%`;
-      },
-      ...overrides,
-    };
+class Parameters implements ParametersI {
+  parameters: ParametersT[];
+  quantity: number;
+  format: Function;
+  constructor(overrides: any) {
+    this.format = overrides?.format
+      ? overrides.format
+      : (v: number[]) => {
+          console.log(v);
+          return `${v[0] * 10}%`;
+        };
+    this.quantity = overrides?.quantity || 1;
+    this.parameters = new Array(this.quantity).fill({}).map(
+      (): ParametersT => ({
+        flip: [1, -1][Math.floor(rand(0, 2))],
+        mag: rand(10, 50),
+        offset: rand(0, 0),
+        freq: rand(0.3, 0.8),
+        shift: [0, 3.14][Math.floor(rand(0, 2))],
+        quantity: 1,
+        ...overrides,
+      })
+    );
   }
 }
-class Properties implements Props {
-  properties: Subprops;
-  styleSheet: CSSProperties = {};
+class Properties implements PropertiesI {
+  properties: PropertiesT;
   generateStyleSheet(time: number): CSSProperties {
     let css: CSSProperties = {};
-    for (let p in this.properties) {
-      css[p as keyof Subprops] = this.properties[p as keyof Subprops].format(
-        fA(time, this.properties[p as keyof Subprops])
+    for (const [p, v] of Object.entries(this.properties)) {
+      css[p as keyof PropertiesT] = v.format(
+        v.parameters.map((p) => {
+          return sinusoidal(time, p);
+        })
       );
     }
+
     return css;
   }
-  constructor(overrides?: Partial<Params>) {
+  constructor() {
+    const xy: ParametersI = new Parameters({ quantity: 2 });
+    const transform: ParametersI = new Parameters({ quantity: 5 });
     this.properties = {
-      top: new Parameters().params,
-      left: new Parameters().params,
-      transform: new Parameters({
-        format: (v: number): string => `scale(${Math.abs(v * 0.05 + 1)}) rotate(${v}deg)`,
-      }).params,
-      filter: new Parameters({
-        format: (v: number): string => `blur(${v / 20}px) hue-rotate(${v * 20}deg)`,
-      }).params,
-      opacity: new Parameters({ format: (v: number): string => `${v * 20}%` }).params,
-      ...overrides,
+      top: { ...xy, format: (v: number[]): string => `${v[0]}%` },
+      left: { ...xy, format: (v: number[]): string => `${v[1]}%` },
+      transform: {
+        ...transform,
+        format: (v: number[]): string =>
+          `scale(${v[0] / 30}) rotate3d(${v[2] / 5},${v[3] / 5},${v[4] * 5},${v[1] * 2}deg)`,
+      },
+      filter: {
+        ...transform,
+        format: (v: number[]): string => `blur(${v[0] / 1200}vw) hue-rotate(${20 * v[2]}deg)`,
+      },
+      opacity: { ...transform, format: (v: number[]): string => `${(1 / v[0]) * 70}` },
+      zIndex: { ...transform, format: (v: number[]): string => `${Math.floor(v[0] * 10)}` },
     };
   }
 }
 function Scream() {
-  const faces: Props[] = new Array(numberOfFaces).fill({}).map((): Props => new Properties());
+  const faces: PropertiesI[] = new Array(numberOfFaces)
+    .fill({})
+    .map((): PropertiesI => new Properties());
   const [styleSheets, setStyleSheets]: [
     CSSProperties[],
     Dispatch<SetStateAction<CSSProperties[]>>
-  ] = useState(faces.map((face: Props): CSSProperties => face.generateStyleSheet(0)));
-
+  ] = useState(faces.map((face: PropertiesI): CSSProperties => face.generateStyleSheet(0)));
   useEffect(() => {
     requestAnimationFrame(function cb(time: any) {
-      setStyleSheets(faces.map((f: Props): CSSProperties => f.generateStyleSheet(time)));
+      setStyleSheets(faces.map((f: PropertiesI): CSSProperties => f.generateStyleSheet(time)));
       if (time) requestAnimationFrame(cb);
     });
   }, []);

@@ -12,18 +12,25 @@ const BlurryBackgroundImage = styled.img`
   position: absolute;
   object-fit: cover;
   filter: blur(0.3rem);
+  z-index: 50;
 `;
 const BackgroundImage = styled.img`
   ${p}
   position: absolute;
   object-fit: contain;
+  @media (orientation: portrait) {
+    object-fit: cover;
+  }
+  @media (min-aspect-ratio: 3/1) {
+    object-fit: cover;
+  }
+  filter: drop-shadow(0 0 max(2vw, 2vh) black);
+  z-index: 100;
 `;
 const ForegroundImage = styled.img`
   ${p}
   position: absolute;
   object-fit: contain;
-  //transform: translate(0%, 0%) scale(100%);
-  //filter: hue-rotate(220deg);
 `;
 
 export { Container, BlurryBackgroundImage, BackgroundImage, ForegroundImage };

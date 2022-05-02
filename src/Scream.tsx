@@ -67,7 +67,7 @@ class Properties implements PropertiesI {
       transform: {
         ...transform,
         format: (v: number[]): string =>
-          `scale(${v[0] / 30}) rotate3d(${v[2] / 5},${v[3] / 5},${v[4] * 5},${v[1] * 2}deg)`,
+          `scale(${v[0] / 30}) skew(${v[2] / 5}deg,${v[3] / 5}deg) rotate(${v[4] * 4}deg)`,
       },
       filter: {
         ...transform,

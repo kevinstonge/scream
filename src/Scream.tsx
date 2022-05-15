@@ -9,7 +9,7 @@ import {
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { CSSProperties } from 'react';
 import type { ParametersT, PropertiesI, PropertiesT, ParametersI } from './types';
-const numberOfFaces: number = 32;
+const numberOfFaces: number = 16;
 const rand: Function = (min: number, max: number): number => Math.random() * (max - min) + min;
 const sinusoidal: Function = (time: number, params: ParametersT): number => {
   const fA = () =>

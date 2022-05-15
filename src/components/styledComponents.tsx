@@ -12,7 +12,7 @@ const BlurryBackgroundImage = styled.img`
   position: absolute;
   object-fit: cover;
   filter: blur(0.3rem);
-  z-index: 50;
+  z-index: 0;
 `;
 const BackgroundImage = styled.img`
   ${p}
@@ -25,7 +25,7 @@ const BackgroundImage = styled.img`
     object-fit: cover;
   }
   filter: drop-shadow(0 0 max(2vw, 2vh) black);
-  z-index: 100;
+  z-index: 20;
 `;
 const ForegroundImage = styled.img`
   ${p}
